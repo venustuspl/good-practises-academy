@@ -1,0 +1,68 @@
+challenge1:
+public class User {
+
+    String id;
+    String name;
+    String surname;
+    LocalDate dateOfBirth;
+    UserAddress userAddress;
+}
+
+@Value(staticConstructor = "of")
+public class UserAddress {
+    String street;
+    String postalCode;
+    String city;
+    String country;
+}
+
+UserService:
+public String getFormattedAddress(String userId) {
+    UserAddress userAddress = userRepository.findBy(userId).getUserAddress();
+    return userAddress.getCountry() + ", " + userAddress.getCity() + ", " + userAddress.getStreet() + " " + userAddress.getPostalCode();
+}
+
+challenge2: tu nie jestem pewny
+    // TODO do obiektu domenowego nie można przekazać konkretnego konwertera, ale można przekazać jego interfejs
+    // TODO możesz zmienić interfejs CurrencyConverter
+
+@Getter
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@AllArgsConstructor(staticName = "of")
+public class Order {
+
+   List<OrderItem> items;
+   BigDecimal totalAmount;
+   Currency currency;
+   Converter converter;
+
+   public void changeTotalAmount(BigDecimal totalAmount, Currency currency) {
+      this.totalAmount = totalAmount;
+      this.currency = currency;
+   }
+
+}
+
+public interface Converter {
+    BigDecimal convertTo(BigDecimal amount, Currency fromCurrency, Currency toCurrency);
+}
+
+public class CurrencyConverter implements Converter{
+    @Override
+    public BigDecimal convertTo(BigDecimal amount, Currency fromCurrency, Currency toCurrency) {
+        return null;
+    }
+
+}
+
+public boolean hasFreeShipping(String orderId) {
+    Order order = orderRepository.findBy(orderId);
+    BigDecimal totalAmount = order.getTotalAmount();
+    Currency currency = order.getCurrency();
+    if(currency != FREE_SHIPPING_THRESHOLD_CURRENCY) {
+        BigDecimal convertedAmount = order.getConverter().convertTo(totalAmount, currency, FREE_SHIPPING_THRESHOLD_CURRENCY);
+        return convertedAmount.compareTo(FREE_SHIPPING_THRESHOLD_AMOUNT) > 0;
+    } else {
+        return totalAmount.compareTo(FREE_SHIPPING_THRESHOLD_AMOUNT) > 0;
+    }
+}
