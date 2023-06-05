@@ -22,7 +22,7 @@ public class OrderService {
         BigDecimal totalAmount = order.getTotalAmount();
         Currency currency = order.getCurrency();
         if(currency != FREE_SHIPPING_THRESHOLD_CURRENCY) {
-            BigDecimal convertedAmount = currencyConverter.convertTo(totalAmount, currency, FREE_SHIPPING_THRESHOLD_CURRENCY);
+            BigDecimal convertedAmount = order.getConverter().convertTo(totalAmount, currency, FREE_SHIPPING_THRESHOLD_CURRENCY);
             return convertedAmount.compareTo(FREE_SHIPPING_THRESHOLD_AMOUNT) > 0;
         } else {
             return totalAmount.compareTo(FREE_SHIPPING_THRESHOLD_AMOUNT) > 0;
@@ -33,7 +33,7 @@ public class OrderService {
         Order order = orderRepository.findBy(orderId);
         BigDecimal totalAmount = order.getTotalAmount();
         Currency currency = order.getCurrency();
-        BigDecimal convertedAmount = currencyConverter.convertTo(discount, discountCurrency, currency);
+        BigDecimal convertedAmount = order.getConverter().convertTo(discount, discountCurrency, currency);
         BigDecimal discountedAmount = totalAmount.subtract(convertedAmount);
         order.changeTotalAmount(discountedAmount, currency);
         orderRepository.save(order);

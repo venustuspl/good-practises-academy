@@ -22,8 +22,8 @@ public class UserService {
     }
     
     public String getFormattedAddress(String userId) {
-        User user = userRepository.findBy(userId);
-        return user.getCountry() + ", " + user.getCity() + ", " + user.getStreet() + " " + user.getPostalCode();
+        UserAddress userAddress = userRepository.findBy(userId).getUserAddress();
+        return userAddress.getCountry() + ", " + userAddress.getCity() + ", " + userAddress.getStreet() + " " + userAddress.getPostalCode();
     }
 
 }
