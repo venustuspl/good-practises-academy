@@ -15,8 +15,6 @@ public class DateOfBirth {
     public static final int ADULT_AGE = 18;
     LocalDate dateOfBirth;
 
-    UserRepository userRepository;
-
     public boolean isBirthdayToday() {
         LocalDate currentDate = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate();
         return currentDate.getMonth() == this.getDateOfBirth().getMonth() && currentDate.getDayOfMonth() == this.getDateOfBirth().getDayOfMonth();
