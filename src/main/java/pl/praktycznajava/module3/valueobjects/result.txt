@@ -1,68 +1,104 @@
-challenge1:
-public class User {
+package pl.praktycznajava.module3.valueobjects.challenge2.model;
 
-    String id;
-    String name;
-    String surname;
-    LocalDate dateOfBirth;
-    UserAddress userAddress;
-}
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.FieldDefaults;
+import pl.praktycznajava.module3.valueobjects.challenge2.Converter;
 
-@Value(staticConstructor = "of")
-public class UserAddress {
-    String street;
-    String postalCode;
-    String city;
-    String country;
-}
-
-UserService:
-public String getFormattedAddress(String userId) {
-    UserAddress userAddress = userRepository.findBy(userId).getUserAddress();
-    return userAddress.getCountry() + ", " + userAddress.getCity() + ", " + userAddress.getStreet() + " " + userAddress.getPostalCode();
-}
-
-challenge2: tu nie jestem pewny
-    // TODO do obiektu domenowego nie można przekazać konkretnego konwertera, ale można przekazać jego interfejs
-    // TODO możesz zmienić interfejs CurrencyConverter
+import java.math.BigDecimal;
+import java.util.List;
 
 @Getter
+@Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor(staticName = "of")
 public class Order {
 
    List<OrderItem> items;
-   BigDecimal totalAmount;
-   Currency currency;
-   Converter converter;
-
-   public void changeTotalAmount(BigDecimal totalAmount, Currency currency) {
-      this.totalAmount = totalAmount;
-      this.currency = currency;
-   }
+   Amount amount;
 
 }
 
-public interface Converter {
-    BigDecimal convertTo(BigDecimal amount, Currency fromCurrency, Currency toCurrency);
-}
+package pl.praktycznajava.module3.valueobjects.challenge2;
 
-public class CurrencyConverter implements Converter{
-    @Override
-    public BigDecimal convertTo(BigDecimal amount, Currency fromCurrency, Currency toCurrency) {
-        return null;
+import pl.praktycznajava.module3.valueobjects.challenge2.model.Amount;
+import pl.praktycznajava.module3.valueobjects.challenge2.model.Currency;
+import pl.praktycznajava.module3.valueobjects.challenge2.model.Order;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+public class OrderService {
+
+
+    OrderRepository orderRepository;
+    CurrencyConverter currencyConverter;
+
+    // TODO do obiektu domenowego nie można przekazać konkretnego konwertera, ale można przekazać jego interfejs
+    // TODO możesz zmienić interfejs CurrencyConverter
+
+    public boolean hasFreeShipping(String orderId) {
+        Order order = orderRepository.findBy(orderId);
+        return order.getAmount().hasFreeShipping(currencyConverter);
     }
 
+
+    public void addDiscount(String orderId, BigDecimal discount, Currency discountCurrency) {
+        Order order = orderRepository.findBy(orderId);
+        order.getAmount().addDiscount(currencyConverter, discount, discountCurrency);
+        orderRepository.save(order);
+    }
+
+    public void addPercentageDiscount(String orderId, int percentageDiscount) {
+        Order order = orderRepository.findBy(orderId);
+        order.getAmount().addPercentageDiscount(percentageDiscount);
+        orderRepository.save(order);
+    }
+
+
 }
 
-public boolean hasFreeShipping(String orderId) {
-    Order order = orderRepository.findBy(orderId);
-    BigDecimal totalAmount = order.getTotalAmount();
-    Currency currency = order.getCurrency();
-    if(currency != FREE_SHIPPING_THRESHOLD_CURRENCY) {
-        BigDecimal convertedAmount = order.getConverter().convertTo(totalAmount, currency, FREE_SHIPPING_THRESHOLD_CURRENCY);
-        return convertedAmount.compareTo(FREE_SHIPPING_THRESHOLD_AMOUNT) > 0;
-    } else {
-        return totalAmount.compareTo(FREE_SHIPPING_THRESHOLD_AMOUNT) > 0;
+package pl.praktycznajava.module3.valueobjects.challenge2.model;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.FieldDefaults;
+import pl.praktycznajava.module3.valueobjects.challenge2.Converter;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+@Getter
+@Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@AllArgsConstructor(staticName = "of")
+public class Amount {
+    public static final int MAX_PERCENT = 100;
+    public static final Currency FREE_SHIPPING_THRESHOLD_CURRENCY = Currency.USD;
+    public static final BigDecimal FREE_SHIPPING_THRESHOLD_AMOUNT = BigDecimal.valueOf(100);
+
+    private BigDecimal totalAmount;
+    private Currency currency;
+
+    public boolean hasFreeShipping(Converter converter) {
+        if(currency != FREE_SHIPPING_THRESHOLD_CURRENCY) {
+            BigDecimal convertedAmount = converter.convertTo(this.totalAmount, this.currency, FREE_SHIPPING_THRESHOLD_CURRENCY);
+            return convertedAmount.compareTo(FREE_SHIPPING_THRESHOLD_AMOUNT) > 0;
+        } else {
+            return totalAmount.compareTo(FREE_SHIPPING_THRESHOLD_AMOUNT) > 0;
+        }
+    }
+
+    public void addDiscount(Converter converter, BigDecimal discount, Currency discountCurrency) {
+        this.totalAmount = this.totalAmount.subtract(converter.convertTo(discount, discountCurrency, this.currency));
+    }
+
+    public void addPercentageDiscount(int percentageDiscount) {
+        this.totalAmount = totalAmount.subtract(totalAmount.multiply(BigDecimal.valueOf(percentageDiscount))
+                .divide(BigDecimal.valueOf(MAX_PERCENT), RoundingMode.HALF_UP));
     }
 }
