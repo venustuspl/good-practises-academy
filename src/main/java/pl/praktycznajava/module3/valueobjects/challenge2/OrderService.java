@@ -1,11 +1,9 @@
 package pl.praktycznajava.module3.valueobjects.challenge2;
 
-import pl.praktycznajava.module3.valueobjects.challenge2.model.Amount;
 import pl.praktycznajava.module3.valueobjects.challenge2.model.Currency;
 import pl.praktycznajava.module3.valueobjects.challenge2.model.Order;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 public class OrderService {
 
@@ -24,13 +22,13 @@ public class OrderService {
 
     public void addDiscount(String orderId, BigDecimal discount, Currency discountCurrency) {
         Order order = orderRepository.findBy(orderId);
-        order.getAmount().addDiscount(currencyConverter, discount, discountCurrency);
+        order.setAmount(order.getAmount().addDiscount(currencyConverter, discount, discountCurrency));
         orderRepository.save(order);
     }
 
     public void addPercentageDiscount(String orderId, int percentageDiscount) {
         Order order = orderRepository.findBy(orderId);
-        order.getAmount().addPercentageDiscount(percentageDiscount);
+        order.setAmount(order.getAmount().addPercentageDiscount(percentageDiscount));
         orderRepository.save(order);
     }
 
